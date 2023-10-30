@@ -45,15 +45,15 @@ const countries = topojson.feature(
 ) as unknown as FeatureCollection;
 const land = topojson.feature(world, world.objects.land);
 
-const circle = d3.geoCircle().center([9, 24]).radius(80).precision(2)();
+const circle = d3.geoCircle().center([0, 20]).radius(65).precision(2)();
 const plot = Plot.plot({
   width: document.body.clientWidth,
-  height: 1200,
+  height: 800,
   projection: {
-    //type: "azimuthal-equidistant",
-    type: "equal-earth",
+    type: "azimuthal-equidistant",
+    //type: "equal-earth",
     //rotate: [-19, -44],
-    //domain: circle,
+    domain: circle,
     inset: 10,
   },
   marks: [
@@ -64,21 +64,21 @@ const plot = Plot.plot({
       stroke: "#aaa",
       strokeWidth: 0.5,
     }),
-    Plot.text(
-      countries.features.filter(
-        (d) =>
-          d.properties!.name === "Israel" ||
-          d.properties!.name === "France" ||
-          d.properties!.name === "Russia" ||
-          d.properties!.name === "Germany" ||
-          d.properties!.name === "Spain"
-      ),
-      Plot.centroid({
-        text: (d) => d.properties.name,
-        fill: "currentColor",
-        stroke: "white",
-      })
-    ),
+    // Plot.text(
+    //   countries.features.filter(
+    //     (d) =>
+    //       d.properties!.name === "Israel" ||
+    //       d.properties!.name === "France" ||
+    //       d.properties!.name === "Russia" ||
+    //       d.properties!.name === "Germany" ||
+    //       d.properties!.name === "Spain"
+    //   ),
+    //   Plot.centroid({
+    //     text: (d) => d.properties.name,
+    //     fill: "currentColor",
+    //     stroke: "white",
+    //   })
+    // ),
     data.families.map((family, i) => {
       // group places in pairs to draw arrows
       const places = family.places.filter(
@@ -107,7 +107,7 @@ const plot = Plot.plot({
             },
           ],
           {
-            bend: -17,
+            bend: 27,
             strokeLinecap: "round",
             strokeLinejoin: "round",
             strokeMiterlimit: 6,
@@ -133,7 +133,12 @@ const plot = Plot.plot({
             },
           };
         }),
-        Plot.centroid({ text: (d) => d.properties.name })
+        Plot.centroid({
+          text: (d) => d.properties.name,
+          //textAnchor: "start",
+          frameAnchor: "left",
+          dx: 12,
+        })
       );
       const dots = Plot.dot(places, {
         x: "longitude",
