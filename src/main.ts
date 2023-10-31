@@ -119,6 +119,7 @@ const plot = Plot.plot({
             y1: "y1",
             y2: "y2",
             stroke: colors[i],
+            sweep: "-x",
           }
         );
       });
