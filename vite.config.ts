@@ -3,7 +3,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   // Set the root directory of your project
   root: "./",
-  base: "/jewish-flux/",
+  base: "/jewish-families-flux/",
 
   // Set the output directory for your built files
   build: {
