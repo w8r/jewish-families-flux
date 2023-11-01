@@ -1,5 +1,5 @@
 import "./style.css";
-import * as d3 from "d3";
+//import * as d3 from "d3";
 import * as Plot from "@observablehq/plot";
 import * as topojson from "topojson";
 import type { FeatureCollection } from "geojson";
