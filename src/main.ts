@@ -47,17 +47,30 @@ const land = topojson.feature(world, world.objects.land);
 
 let plot: SVGSVGElement | HTMLElement;
 const render = (data: FamilyData) => {
-  const circle = d3.geoCircle().center([0, 20]).radius(65).precision(2)();
+  const circle = d3.geoCircle().center([0, 20]).radius(55).precision(2)();
   if (plot) plot.remove();
   plot = Plot.plot({
     width: document.body.clientWidth,
-    height: 800,
+    height: document.body.clientHeight,
     projection: {
-      type: "azimuthal-equidistant",
+      type: "equirectangular",
+      clip: true,
+      domain: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-50, -30],
+            [-50, 60],
+            [50, 60],
+            [50, -30],
+            [-50, -30],
+          ],
+        ],
+      },
       //type: "equal-earth",
-      //rotate: [-19, -44],
-      domain: circle,
-      inset: 10,
+      //rotate: [0, 0],
+      //domain: circle,
+      //inset: 10,
     },
     marks: [
       Plot.geo(land, {
