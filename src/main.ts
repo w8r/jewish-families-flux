@@ -47,7 +47,7 @@ const land = topojson.feature(world, world.objects.land);
 
 let plot: SVGSVGElement | HTMLElement;
 const render = (data: FamilyData) => {
-  const circle = d3.geoCircle().center([0, 20]).radius(55).precision(2)();
+  //const circle = d3.geoCircle().center([0, 20]).radius(55).precision(2)();
   if (plot) plot.remove();
   plot = Plot.plot({
     width: document.body.clientWidth,
