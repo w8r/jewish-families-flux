@@ -2,7 +2,7 @@ import "./style.css";
 //import * as d3 from "d3";
 import * as Plot from "@observablehq/plot";
 import * as topojson from "topojson";
-import type { FeatureCollection } from "geojson";
+import type { FeatureCollection, Polygon } from "geojson";
 
 type Place = {
   name: string;
@@ -75,9 +75,47 @@ const countries = topojson.feature(
 ) as unknown as FeatureCollection;
 const land = topojson.feature(world, world.objects.land);
 
+const bboxToGeoJSONGeometry = (bbox: number[][]): Polygon => {
+  return {
+    type: "Polygon",
+    coordinates: [
+      [
+        bbox[0],
+        [bbox[0][0], bbox[1][1]],
+        bbox[1],
+        [bbox[1][0], bbox[0][1]],
+        bbox[0],
+      ],
+    ],
+  };
+};
+
 let plot: SVGSVGElement | HTMLElement;
 const render = (data: FamilyData) => {
-  //const circle = d3.geoCircle().center([0, 20]).radius(55).precision(2)();
+  const bbox = data.families.reduce(
+    (acc, family) => {
+      const { places } = family;
+      const longitudes = places
+        .map((place) => place.longitude!)
+        .filter(Boolean);
+      const latitudes = places.map((place) => place.latitude!).filter(Boolean);
+      const minLongitude = Math.min(...longitudes);
+      const maxLongitude = Math.max(...longitudes);
+      const minLatitude = Math.min(...latitudes);
+      const maxLatitude = Math.max(...latitudes);
+
+      return [
+        [Math.min(acc[0][0], minLongitude), Math.min(acc[0][1], minLatitude)],
+        [Math.max(acc[1][0], maxLongitude), Math.max(acc[1][1], maxLatitude)],
+      ];
+    },
+    [
+      [Infinity, Infinity],
+      [-Infinity, -Infinity],
+    ]
+  );
+  console.log(bbox);
+
   if (plot) plot.remove();
   plot = Plot.plot({
     width: document.body.clientWidth,
@@ -89,7 +127,7 @@ const render = (data: FamilyData) => {
         type: "Polygon",
         coordinates: [
           [
-            [-50, -30],
+            [-40, -30],
             [-50, 60],
             [50, 60],
             [50, -30],
@@ -110,35 +148,20 @@ const render = (data: FamilyData) => {
         stroke: "#aaa",
         strokeWidth: 0.5,
       }),
-      // Plot.text(
-      //   countries.features.filter(
-      //     (d) =>
-      //       d.properties!.name === "Israel" ||
-      //       d.properties!.name === "France" ||
-      //       d.properties!.name === "Russia" ||
-      //       d.properties!.name === "Germany" ||
-      //       d.properties!.name === "Spain"
-      //   ),
-      //   Plot.centroid({
-      //     text: (d) => d.properties.name,
-      //     fill: "currentColor",
-      //     stroke: "white",
-      //   })
-      // ),
       data.families.map((family) => {
         const { places, migrations } = family;
         console.log(family);
         const arrows = migrations.map((migration) => {
           const { core, generation } = migration;
           const color = generationColor.get(core ? 1 : generation);
-          return Plot.arrow(migrationToArrowData(migration, places), {
-            bend: 27,
+          const arrow = Plot.arrow(migrationToArrowData(migration, places), {
+            bend: true,
             strokeLinecap: "round",
             strokeLinejoin: "round",
             strokeMiterlimit: 6,
-            headLength: 14,
-            headAngle: 40,
-            strokeWidth: 1,
+            headLength: 8,
+            headAngle: 30,
+            strokeWidth: 2,
             x1: "x1",
             x2: "x2",
             y1: "y1",
@@ -146,6 +169,7 @@ const render = (data: FamilyData) => {
             stroke: color,
             sweep: "-x",
           });
+          return arrow;
         });
         const texts = Plot.text(
           places.map((place) => {
@@ -169,12 +193,34 @@ const render = (data: FamilyData) => {
         const dots = Plot.dot(places, {
           x: "longitude",
           y: "latitude",
-          r: 2,
-          stroke: "red",
+          r: 4,
+          stroke: "#444444",
           fill: "red",
           fillOpacity: 0.2,
         });
-        return [...[dots], ...arrows, ...[texts]];
+        const tips = migrations
+          .filter((migration) => migration.year)
+          .map((migration) => {
+            const { year, from, to } = migration;
+            const start = places[from];
+            const end = places[to];
+            const x1 = start.longitude!;
+            const y1 = start.latitude!;
+            const x2 = end.longitude!;
+            const y2 = end.latitude!;
+
+            const x = (x1 + x2) / 2;
+            +(y1 - y2) * 0.15;
+            const y = (y1 + y2) / 2;
+            -(x1 - x2) * 0.15;
+            return Plot.tip([year], {
+              x,
+              y,
+              dy: -3,
+              anchor: "bottom",
+            });
+          });
+        return [[dots], ...arrows, [texts]];
       }),
     ],
   });
@@ -206,10 +252,6 @@ controls.innerHTML +=
     .join("") +
   "</div>";
 
-controls.innerHTML += `<div class="controls">
-  <button id="save">Download map</button>
-</div>`;
-
 let timer: number;
 controls.addEventListener("change", () => {
   clearTimeout(timer);
@@ -226,6 +268,10 @@ controls.addEventListener("change", () => {
   }, 250);
 });
 
+// download button
+controls.innerHTML += `<div class="controls">
+  <button id="save">Download map</button>
+</div>`;
 document
   .querySelector<HTMLButtonElement>("#save")!
   .addEventListener("click", () => {
