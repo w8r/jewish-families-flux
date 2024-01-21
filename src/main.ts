@@ -2,7 +2,7 @@ import "./style.css";
 //import * as d3 from "d3";
 import * as Plot from "@observablehq/plot";
 import * as topojson from "topojson";
-import type { FeatureCollection, Polygon } from "geojson";
+import type { FeatureCollection } from "geojson";
 
 type Place = {
   name: string;
@@ -75,20 +75,20 @@ const countries = topojson.feature(
 ) as unknown as FeatureCollection;
 const land = topojson.feature(world, world.objects.land);
 
-const bboxToGeoJSONGeometry = (bbox: number[][]): Polygon => {
-  return {
-    type: "Polygon",
-    coordinates: [
-      [
-        bbox[0],
-        [bbox[0][0], bbox[1][1]],
-        bbox[1],
-        [bbox[1][0], bbox[0][1]],
-        bbox[0],
-      ],
-    ],
-  };
-};
+// const bboxToGeoJSONGeometry = (bbox: number[][]): Polygon => {
+//   return {
+//     type: "Polygon",
+//     coordinates: [
+//       [
+//         bbox[0],
+//         [bbox[0][0], bbox[1][1]],
+//         bbox[1],
+//         [bbox[1][0], bbox[0][1]],
+//         bbox[0],
+//       ],
+//     ],
+//   };
+// };
 
 let plot: SVGSVGElement | HTMLElement;
 const render = (data: FamilyData) => {
@@ -198,28 +198,28 @@ const render = (data: FamilyData) => {
           fill: "red",
           fillOpacity: 0.2,
         });
-        const tips = migrations
-          .filter((migration) => migration.year)
-          .map((migration) => {
-            const { year, from, to } = migration;
-            const start = places[from];
-            const end = places[to];
-            const x1 = start.longitude!;
-            const y1 = start.latitude!;
-            const x2 = end.longitude!;
-            const y2 = end.latitude!;
+        // const tips = migrations
+        //   .filter((migration) => migration.year)
+        //   .map((migration) => {
+        //     const { year, from, to } = migration;
+        //     const start = places[from];
+        //     const end = places[to];
+        //     const x1 = start.longitude!;
+        //     const y1 = start.latitude!;
+        //     const x2 = end.longitude!;
+        //     const y2 = end.latitude!;
 
-            const x = (x1 + x2) / 2;
-            +(y1 - y2) * 0.15;
-            const y = (y1 + y2) / 2;
-            -(x1 - x2) * 0.15;
-            return Plot.tip([year], {
-              x,
-              y,
-              dy: -3,
-              anchor: "bottom",
-            });
-          });
+        //     const x = (x1 + x2) / 2;
+        //     +(y1 - y2) * 0.15;
+        //     const y = (y1 + y2) / 2;
+        //     -(x1 - x2) * 0.15;
+        //     return Plot.tip([year], {
+        //       x,
+        //       y,
+        //       dy: -3,
+        //       anchor: "bottom",
+        //     });
+        //   });
         return [[dots], ...arrows, [texts]];
       }),
     ],
