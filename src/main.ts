@@ -10,9 +10,18 @@ type Place = {
   longitude: number | null; // Use null for places without coordinates
 };
 
+type Migration = {
+  from: number;
+  to: number;
+  year?: number | string;
+  core?: boolean;
+  generation: -3 | -2 | -1 | 0 | 1;
+};
+
 type Family = {
   name: string;
   places: Place[];
+  migrations: Migration[];
 };
 
 type FamilyData = {
@@ -26,18 +35,22 @@ console.log(data);
 
 // 10 random dark pastel colors with high difference that would look good on a
 // white and light grey background
-const colors = [
-  "#7F7F7F",
-  "#007F7F",
-  "#7F007F",
-  "#007F00",
-  "#7F7F00",
-  "#00007F",
-  "#7F0000",
-  "#000000",
-  "#007FFF",
-  "#7F00FF",
-];
+const colors = ["#007F00", "#222222", "#7F0000", "#007FFF", "#7F00FF"];
+const generationColor = new Map([
+  [-3, "#007F00"],
+  [-2, "#007F00"],
+  [-1, "#007FFF"],
+  [0, "#7F0000"],
+  [1, "#000000"],
+]);
+
+const generationName = new Map([
+  [-3, "great-great-grandparents"],
+  [-2, "great-grandparents"],
+  [-1, "grandparents"],
+  [0, "parents"],
+  [1, "core family"],
+]);
 
 const countries = topojson.feature(
   world,
@@ -97,16 +110,27 @@ const render = (data: FamilyData) => {
       // ),
       data.families.map((family, i) => {
         // group places in pairs to draw arrows
-        const places = family.places.filter(
-          (place) => place.latitude !== null && place.longitude !== null
-        );
+        // const places = family.places.filter(
+        //   (place) => place.latitude !== null && place.longitude !== null
+        // );
+        const { places, migrations } = family;
+
         const arrowData: [Place, Place][] = [];
-        for (let i = 0; i < places.length - 1; i++) {
-          arrowData.push([places[i], places[i + 1]]);
-        }
-        console.log(family.name, family.places);
-        const arrows = arrowData.map((arrow) => {
-          const [start, end] = arrow;
+        // for (let i = 0; i < places.length - 1; i++) {
+        //   arrowData.push([places[i], places[i + 1]]);
+        // }
+        // for (const migration of migrations) {
+        //   const { from, to, year, core } = migration;
+        //   const source = places[from];
+        //   const target = places[to];
+        //   if (source && target) arrowData.push([source, target]);
+        // }
+        console.log(family);
+        const arrows = migrations.map((migration) => {
+          const { from, to, year, core, generation } = migration;
+          const start = places[from];
+          const end = places[to];
+          const color = generationColor.get(core ? 1 : generation);
           return Plot.arrow(
             [
               {
@@ -134,7 +158,7 @@ const render = (data: FamilyData) => {
               x2: "x2",
               y1: "y1",
               y2: "y2",
-              stroke: colors[i],
+              stroke: color,
               sweep: "-x",
             }
           );
@@ -154,7 +178,7 @@ const render = (data: FamilyData) => {
             text: (d) => d.properties.name,
             //textAnchor: "start",
             frameAnchor: "left",
-            dx: 12,
+            dx: 6,
           })
         );
         const dots = Plot.dot(places, {
@@ -182,6 +206,25 @@ controls.innerHTML += data.families
   })
   .join("");
 
+// render colors legend
+controls.innerHTML +=
+  `<div class="legend">` +
+  Array.from(generationColor.keys())
+    .map((generation) => {
+      const color = generationColor.get(generation);
+      const name = generationName.get(generation);
+      return `<div>
+        <span class="legend--color" style="background-color: ${color}"></span>
+        <span class="legend--label">${name}</span>
+      </div>`;
+    })
+    .join("") +
+  "</div>";
+
+controls.innerHTML += `<div class="controls">
+  <button id="save">Download map</button>
+</div>`;
+
 let timer: number;
 controls.addEventListener("change", () => {
   clearTimeout(timer);
@@ -197,3 +240,21 @@ controls.addEventListener("change", () => {
     render(filteredData);
   }, 250);
 });
+
+document
+  .querySelector<HTMLButtonElement>("#save")!
+  .addEventListener("click", () => {
+    const svg = document.querySelector<SVGSVGElement>("svg")!;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    // save SVG as file
+    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+
+    // download SVG file
+    link.download = "map.svg";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });

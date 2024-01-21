@@ -5,6 +5,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
+  color: #242424;
   background-color: #242424;
 
   font-synthesis: none;
@@ -56,4 +57,16 @@ h1 {
   padding: 1em;
   border-radius: 5px;
   background-color: #fff;
+  color: #242424;
+}
+
+.legend .legend--color {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.legend .legend--label {
+  margin-left: 0.15em;
 }
