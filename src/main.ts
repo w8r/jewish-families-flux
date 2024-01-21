@@ -28,14 +28,31 @@ type FamilyData = {
   families: Family[];
 };
 
+const migrationToArrowData = (migration: Migration, places: Place[]) => {
+  const { from, to } = migration;
+  const start = places[from];
+  const end = places[to];
+  return [
+    {
+      x1: start.longitude!,
+      y1: start.latitude!,
+      x2: end.longitude!,
+      y2: end.latitude!,
+    },
+    {
+      x1: start.longitude!,
+      y1: start.latitude!,
+      x2: end.longitude!,
+      y2: end.latitude!,
+    },
+  ];
+};
+
 const file = await fetch("countries-50m.json");
 const world = (await file.json()) as TopoJSON.Topology;
 const data = (await fetch("families.json").then((d) => d.json())) as FamilyData;
 console.log(data);
 
-// 10 random dark pastel colors with high difference that would look good on a
-// white and light grey background
-const colors = ["#007F00", "#222222", "#7F0000", "#007FFF", "#7F00FF"];
 const generationColor = new Map([
   [-3, "#007F00"],
   [-2, "#007F00"],
@@ -108,60 +125,27 @@ const render = (data: FamilyData) => {
       //     stroke: "white",
       //   })
       // ),
-      data.families.map((family, i) => {
-        // group places in pairs to draw arrows
-        // const places = family.places.filter(
-        //   (place) => place.latitude !== null && place.longitude !== null
-        // );
+      data.families.map((family) => {
         const { places, migrations } = family;
-
-        const arrowData: [Place, Place][] = [];
-        // for (let i = 0; i < places.length - 1; i++) {
-        //   arrowData.push([places[i], places[i + 1]]);
-        // }
-        // for (const migration of migrations) {
-        //   const { from, to, year, core } = migration;
-        //   const source = places[from];
-        //   const target = places[to];
-        //   if (source && target) arrowData.push([source, target]);
-        // }
         console.log(family);
         const arrows = migrations.map((migration) => {
-          const { from, to, year, core, generation } = migration;
-          const start = places[from];
-          const end = places[to];
+          const { core, generation } = migration;
           const color = generationColor.get(core ? 1 : generation);
-          return Plot.arrow(
-            [
-              {
-                x1: start.longitude!,
-                y1: start.latitude!,
-                x2: end.longitude!,
-                y2: end.latitude!,
-              },
-              {
-                x1: start.longitude!,
-                y1: start.latitude!,
-                x2: end.longitude!,
-                y2: end.latitude!,
-              },
-            ],
-            {
-              bend: 27,
-              strokeLinecap: "round",
-              strokeLinejoin: "round",
-              strokeMiterlimit: 6,
-              headLength: 14,
-              headAngle: 40,
-              strokeWidth: 1,
-              x1: "x1",
-              x2: "x2",
-              y1: "y1",
-              y2: "y2",
-              stroke: color,
-              sweep: "-x",
-            }
-          );
+          return Plot.arrow(migrationToArrowData(migration, places), {
+            bend: 27,
+            strokeLinecap: "round",
+            strokeLinejoin: "round",
+            strokeMiterlimit: 6,
+            headLength: 14,
+            headAngle: 40,
+            strokeWidth: 1,
+            x1: "x1",
+            x2: "x2",
+            y1: "y1",
+            y2: "y2",
+            stroke: color,
+            sweep: "-x",
+          });
         });
         const texts = Plot.text(
           places.map((place) => {
@@ -181,6 +165,7 @@ const render = (data: FamilyData) => {
             dx: 6,
           })
         );
+        // place marks on the map
         const dots = Plot.dot(places, {
           x: "longitude",
           y: "latitude",
